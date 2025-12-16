@@ -8,8 +8,8 @@
 #include <PubSubClient.h>        // MQTT
 
 // ------------------- WIFI -------------------
-const char* ssid     = "Flybox_BF5D";
-const char* password = "CULT11***";
+const char* ssid     = "moham";
+const char* password = "moham1234567";
 
 // ------------------- MQTT -------------------
 const char* mqtt_server = "broker.hivemq.com";
@@ -19,7 +19,7 @@ const char* mqtt_client_id = "esp32_client";
 
 // ------------------- PINS -------------------
 #define DHTPIN        15        // Pin DHT11
-#define DHTTYPE       DHT11
+#define DHTTYPE       DHT22
 #define DS18B20_PIN    4        // Pin pour DS18B20
 #define waterSensorPin 34       // Capteur niveau d'eau
 #define soilSensorPin  32       // Capteur humidité sol
@@ -28,6 +28,7 @@ const char* mqtt_client_id = "esp32_client";
 #define buzzerPin      26       // Buzzer
 #define ledWaterPin    14       // LED niveau d'eau bas
 #define ledMotorPin    27       // LED moteur ON
+#define ledLumPin      13       // LED faible luminosité
 
 // ------------------- OBJETS -------------------
 BH1750 lightSensor;               // Capteur luminosité
@@ -42,7 +43,7 @@ unsigned long lastMsg = 0;
 const long interval = 30000;      // Intervalle en ms pour envoi des données
 int dryValue = 3000;              // Humidité sol: valeur sol sec
 int wetValue = 1500;              // Humidité sol: valeur sol humide
-#define GAS_THRESHOLD 40         // Seuil gaz pour activer moteur + buzzer
+#define GAS_THRESHOLD 30         // Seuil gaz pour activer moteur + buzzer
 
 // ------------------- FONCTIONS WIFI/MQTT -------------------
 void setup_wifi() {
@@ -84,7 +85,7 @@ void readDHT(float &h, float &t) {
   h = dht.readHumidity();
   t = dht.readTemperature();
   if (isnan(h) || isnan(t)) {
-    Serial.println("Erreur lecture DHT11");
+    Serial.println("Erreur lecture DHT22");
     h = t = -1;
   }
 }
@@ -111,6 +112,7 @@ void sendData() {
   float l   = lux();
 
   // ------------------- ACTIONNEURS -------------------
+  // Relais moteur et buzzer si gaz élevé
   if (gas > GAS_THRESHOLD) {
     digitalWrite(motorPin, HIGH);
     digitalWrite(buzzerPin, HIGH);
@@ -122,8 +124,13 @@ void sendData() {
     digitalWrite(ledMotorPin, LOW);
   }
 
+  // LED niveau d'eau bas
   if (water < 20) digitalWrite(ledWaterPin, HIGH);
   else digitalWrite(ledWaterPin, LOW);
+
+  // LED faible luminosité
+  if (l >= 0 && l < 20) digitalWrite(ledLumPin, HIGH);
+  else digitalWrite(ledLumPin, LOW);
 
   // ------------------- MQTT -------------------
   StaticJsonDocument<256> doc;
@@ -165,6 +172,9 @@ void setup() {
 
   pinMode(ledMotorPin, OUTPUT);
   digitalWrite(ledMotorPin, LOW);
+
+  pinMode(ledLumPin, OUTPUT);
+  digitalWrite(ledLumPin, LOW);
 
   setup_wifi();
   client.setServer(mqtt_server, mqtt_port);
