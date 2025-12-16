@@ -1,4 +1,5 @@
 🌱 Smart Farm IoT – AgriNova
+
 📌 Description du projet
 
 AgriNova est un projet de Smart Farm basé sur l’Internet des Objets (IoT), conçu pour améliorer la gestion des exploitations agricoles grâce à une surveillance en temps réel et une automatisation intelligente des paramètres environnementaux.
